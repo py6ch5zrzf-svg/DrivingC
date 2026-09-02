@@ -1,0 +1,11 @@
+{
+  "name":"Driving C — категория C",
+  "short_name":"Driving C",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f3f5f7",
+  "theme_color":"#17202a",
+  "lang":"ru",
+  "description":"Офлайн-расписание инструктора категории C: ученики, вождение, журнал и отчёты.",
+  "icons":[]
+}
