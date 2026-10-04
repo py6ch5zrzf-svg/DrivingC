@@ -17,17 +17,63 @@
 <section id="journal" class="page"><div class="card"><h2>Журнал вождения</h2><div class="grid"><div><label>Ученик</label><select id="jStudent"><option value="">Все ученики</option></select></div><div><label>Период</label><select id="jPeriod"><option value="all">Все</option><option value="future">Предстоящие</option><option value="done">Проведённые</option></select></div></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Дата</th><th>Время</th><th>Ученик</th><th>Вид</th><th>Место</th><th>Часы</th><th>Статус</th><th></th></tr></thead><tbody id="journalList"></tbody></table></div></div></section>
 <section id="reports" class="page"><div class="card"><h2>Отчёты</h2><div id="reportContent"></div></div></section>
 <section id="data" class="page"><div class="card"><h2>Импорт и экспорт</h2><p class="muted">Резервная копия сохраняет учеников, расписание, журнал и настройки. JSON работает без интернета. Учеников и расписание можно добавлять из CSV без удаления существующих данных.</p><div class="actions"><button class="primary" onclick="backup()">💾 Экспорт JSON</button><label style="padding:7px 10px;border:1px solid #ccd3d9;border-radius:8px;cursor:pointer">↥ Импорт JSON<input id="restore" type="file" accept=".json" style="display:none"></label><label style="padding:7px 10px;border:1px solid #ccd3d9;border-radius:8px;cursor:pointer">👥 Импорт учеников CSV<input id="studentsCsv" type="file" accept=".csv,text/csv" style="display:none"></label><label style="padding:7px 10px;border:1px solid #ccd3d9;border-radius:8px;cursor:pointer">📅 Импорт расписания CSV<input id="scheduleCsv" type="file" accept=".csv,text/csv" style="display:none"></label><button onclick="exportCSV()">📄 Журнал CSV</button><button onclick="exportICS()">📅 Календарь .ics</button><button class="danger" onclick="clearAll()">Удалить всё</button></div><div id="dataMsg" class="note" style="margin-top:12px">Формат расписания CSV: Дата;Начало;Окончание;Ученик;Вид;Автомобиль;Место;Напоминание;Заметка</div></div></section>
-<section id="settings" class="page"><div class="card"><h2>Настройки</h2><div class="grid"><div><label>Название приложения</label><input id="appName" value="Driving C"></div><div><label>Категория</label><input id="category" value="C"></div><div><label>Длительность по умолчанию, мин.</label><input id="defaultDuration" type="number" min="15" step="5" value="90"></div><div><label>Начало рабочего дня</label><input id="workStart" type="time" value="08:00"></div><div><label>Конец рабочего дня</label><input id="workEnd" type="time" value="20:00"></div></div><br><button class="primary" onclick="saveSettings()">Сохранить настройки</button></div><div class="card"><h2>Установка на iPhone</h2><p>Открой приложение в Safari → <b>Поделиться</b> → <b>На экран «Домой»</b> → <b>Добавить</b>.</p><p class="muted">После добавления это будет отдельное приложение Driving C. Данные хранятся локально на телефоне. Поле «Напоминание» сейчас является отметкой в карточке занятия и не создаёт системное уведомление iPhone.</p><p class="muted"><b>Версия 1.3</b></p></div></section>
+<section id="settings" class="page"><div class="card"><h2>Настройки</h2><div class="grid"><div><label>Название приложения</label><input id="appName" value="Driving C"></div><div><label>Категория</label><input id="category" value="C"></div><div><label>Длительность по умолчанию, мин.</label><input id="defaultDuration" type="number" min="15" step="5" value="90"></div><div><label>Начало рабочего дня</label><input id="workStart" type="time" value="08:00"></div><div><label>Конец рабочего дня</label><input id="workEnd" type="time" value="20:00"></div></div><br><button class="primary" onclick="saveSettings()">Сохранить настройки</button></div><div class="card"><h2>Установка на iPhone</h2><p>Открой приложение в Safari → <b>Поделиться</b> → <b>На экран «Домой»</b> → <b>Добавить</b>.</p><p class="muted">После добавления это будет отдельное приложение Driving C. Данные хранятся локально на телефоне. Поле «Напоминание» сейчас является отметкой в карточке занятия и не создаёт системное уведомление iPhone.</p><p class="muted"><b>Версия 1.4</b></p></div></section>
 </main>
 <div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">День</h2><button onclick="closeModal()">×</button></div><input id="dayPicker" type="date"><div id="dayContent" style="margin-top:12px"></div></div></div>
 <script>
 const KEY='driving_c_v1';
-const APP_VERSION='1.3';
+const APP_VERSION='1.4';
 const DEFAULT_SETTINGS={appName:'Driving C',category:'C',defaultDuration:90,workStart:'08:00',workEnd:'20:00'};
 function normalizeData(x){x=(x&&typeof x==='object')?x:{};x.settings={...DEFAULT_SETTINGS,...(x.settings||{})};x.students=Array.isArray(x.students)?x.students:[];x.lessons=Array.isArray(x.lessons)?x.lessons:[];x.students.forEach(s=>{s.id=String(s.id??uid());s.name=String(s.name??'').trim();s.status=s.status||'Обучается';s.plan=Number(s.plan)||0});x.lessons.forEach(l=>{l.id=String(l.id??uid());l.studentId=String(l.studentId??'');l.done=!!l.done;l.reminder=Number(l.reminder)||0});return x}
 function uid(){return (crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))}
 function loadData(){try{return normalizeData(JSON.parse(localStorage.getItem(KEY)||'null'))}catch(e){console.warn('Повреждённые локальные данные:',e);return normalizeData(null)}}
 let data=loadData();
+const SCHEDULE_SEED_2026_10_05=[
+  {date:'2026-10-05',start:'14:00',end:'15:30',name:'Лобов Семён'},
+  {date:'2026-10-05',start:'15:30',end:'17:00',name:'Михайлов Роман'},
+  {date:'2026-10-06',start:'14:00',end:'15:30',name:'Михайлов Роман'},
+  {date:'2026-10-06',start:'15:30',end:'17:00',name:'Сутормин Данил'},
+  {date:'2026-10-07',start:'14:00',end:'15:30',name:'Лобов Семён'},
+  {date:'2026-10-07',start:'15:30',end:'17:00',name:'Сысоев Артём'},
+  {date:'2026-10-08',start:'14:00',end:'15:30',name:'Сёмкин Матвей'},
+  {date:'2026-10-08',start:'15:30',end:'17:00',name:'Мищенко Михаил'},
+  {date:'2026-10-09',start:'14:00',end:'15:30',name:'Мосеев Родион'},
+  {date:'2026-10-09',start:'15:30',end:'17:00',name:'Мосеев Родион'}
+];
+function normNameSeed(v){return String(v||'').trim().replace(/\s+/g,' ').toLowerCase().replace(/ё/g,'е')}
+function findSeedStudent(name){
+  const target=normNameSeed(name),parts=target.split(' '),first=parts[1]||'';
+  let st=data.students.find(x=>normNameSeed(x.name)===target);
+  if(st)return st;
+  const byFirst=data.students.filter(x=>{const p=normNameSeed(x.name).split(' ');return first&&p[1]===first});
+  if(byFirst.length===1){
+    st=byFirst[0];
+    if(name==='Мосеев Родион'){
+      const old=String(st.name||'').trim().split(/\s+/);
+      st.name=['Мосеев','Родион',...old.slice(2)].join(' ');
+    }
+    return st;
+  }
+  return null;
+}
+function installOctoberSchedule(){
+  if(data._scheduleSeed_2026_10_05)return;
+  for(const row of SCHEDULE_SEED_2026_10_05){
+    let st=findSeedStudent(row.name);
+    if(!st){
+      st={id:uid(),name:row.name,phone:'',status:'Обучается',plan:20,notes:'Добавлен из расписания 5–9 октября'};
+      data.students.push(st);
+    }
+    const exists=data.lessons.some(l=>l.date===row.date&&l.start===row.start&&l.end===row.end&&String(l.studentId)===String(st.id));
+    if(exists)continue;
+    const occupied=data.lessons.some(l=>l.date===row.date&&row.start<l.end&&row.end>l.start);
+    if(occupied)continue;
+    data.lessons.push({id:uid(),date:row.date,start:row.start,end:row.end,studentId:String(st.id),type:'Практика',vehicle:'',place:'',reminder:30,notes:'Расписание 5–9 октября 2026',done:false});
+  }
+  data._scheduleSeed_2026_10_05=true;
+  save();
+}
+
 let weekDate=new Date(); const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function save(){localStorage.setItem(KEY,JSON.stringify(data))} function iso(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)} function dfrom(s){return new Date(s+'T12:00:00')} function monday(d){let x=new Date(d),n=x.getDay()||7;x.setDate(x.getDate()-n+1);x.setHours(0,0,0,0);return x} function dur(l){let [ah,am]=l.start.split(':').map(Number),[bh,bm]=l.end.split(':').map(Number);return Math.max(0,(bh*60+bm-ah*60-am)/60)}
 function studentName(id){id=String(id);return data.students.find(s=>String(s.id)===id)?.name||'Неизвестный ученик'}
@@ -39,7 +85,8 @@ function renderWeek(){let s=monday(weekDate),e=new Date(s);e.setDate(e.getDate()
 function card(l){return `<div class="lesson ${l.done?'done':''}"><strong>${l.start}–${l.end}</strong><b>${esc(studentName(l.studentId))}</b><small>${esc(l.type)}${l.place?' · '+esc(l.place):''}</small><small>${l.vehicle?'🚛 '+esc(l.vehicle):''}${l.notes?' · '+esc(l.notes):''}</small><small>${l.done?'✓ Проведено · ':''}${dur(l).toFixed(1)} ч.${l.reminder?` · ⏰ ${l.reminder} мин.`:''}</small><button onclick="toggleDone('${l.id}')">${l.done?'Вернуть':'✓ Проведено'}</button> <button onclick="editLesson('${l.id}')">Изм.</button> <button class="danger" onclick="delLesson('${l.id}')">Удалить</button></div>`}
 function shift(n){weekDate=new Date(weekDate.getTime()+n*86400000);renderWeek()}function today(){weekDate=new Date();renderWeek()}function showDay(){let d=iso(new Date());$('dayPicker').value=d;$('modalTitle').textContent='Занятия за день';$('modal').classList.add('show');renderDay()}function closeModal(){$('modal').classList.remove('show')} $('dayPicker').onchange=renderDay;function renderDay(){let d=$('dayPicker').value,ls=data.lessons.filter(l=>l.date===d).sort((a,b)=>a.start.localeCompare(b.start));$('dayContent').innerHTML=ls.length?ls.map(card).join(''):'<div class="empty">Занятий нет.</div>'}
 function overlap(studentId,date,start,end,ignore){return data.lessons.find(l=>String(l.id)!==String(ignore)&&l.date===date&&l.studentId===studentId&&start<l.end&&end>l.start)||data.lessons.find(l=>String(l.id)!==String(ignore)&&l.date===date&&start<l.end&&end>l.start)}
-$('lessonForm').onsubmit=e=>{e.preventDefault();let id=$('editId').value||uid(),date=$('date').value,start=$('start').value,end=$('end').value,studentId=$('student').value;if(end<=start){alert('Окончание должно быть позже начала.');return}if((start<data.settings.workStart||end>data.settings.workEnd)&&!confirm(`Время выходит за рабочий диапазон ${data.settings.workStart}–${data.settings.workEnd}. Всё равно сохранить?`))return;let ov=overlap(studentId,date,start,end,$('editId').value);if(ov){$('overlap').style.display='block';$('overlap').innerHTML=`<span class="dangerText">Конфликт:</span> ${ov.date} ${ov.start}–${ov.end} · ${esc(studentName(ov.studentId))}. Выбери другое время.`;return}$('overlap').style.display='none';let obj={id,date,start,end,studentId,type:$('type').value,vehicle:$('vehicle').value.trim(),place:$('place').value.trim(),reminder:+$('reminder').value,notes:$('notes').value.trim(),done:false};let old=data.lessons.find(l=>String(l.id)===String(id));if(old){obj.done=old.done;data.lessons=data.lessons.map(l=>String(l.id)===String(id)?obj:l)}else data.lessons.push(obj);save();resetForm();renderAll();show('schedule')}
+$('lessonForm').onsubmit=e=>{e.preventDefault();let id=$('editId').value||uid(),date=$('date').value,start=$('start').value,end=$('end').value,studentId=$('student').value;if(end<=start){alert('Окончание должно быть позже начала.');return}if((start<data.settings.workStart||end>data.settings.workEnd)&&!confirm(`Время выходит за рабочий диапазон ${data.settings.workStart}–${data.settings.workEnd}. Всё равно сохранить?`))return;let ov=overlap(studentId,date,start,end,$('editId').value);if(ov){$('overlap').style.display='block';$('overlap').innerHTML=`<span class="dangerText">Конфликт:</span> ${ov.date} ${ov.start}–${ov.end} · ${esc(studentName(ov.studentId))}. Выбери другое время.`;return}$('overlap').style.display='none';let obj={id,date,start,end,studentId,type:$('type').value,vehicle:$('vehicle').value.trim(),place:$('place').value.trim(),reminder:+$('reminder').value,notes:$('notes').value.trim(),done:false};let old=data.lessons.find(l=>String(l.id)===String(id));if(old){obj.done=old.done;data.lessons=data.lessons.map(l=>String(l.id)===String(id)?obj:l)}else data.lessons.push(obj);save();installOctoberSchedule();
+resetForm();renderAll();show('schedule')}
 function resetForm(){$('editId').value='';$('formTitle').textContent='Записать вождение';$('date').value=iso(new Date());$('start').value='09:00';let [h,m]=($('start').value||'09:00').split(':').map(Number);let mins=h*60+m+(+data.settings.defaultDuration||90);$('end').value=String(Math.floor(mins/60)%24).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');$('type').value='Практика';$('vehicle').value='';$('place').value='';$('reminder').value='30';$('notes').value='';$('overlap').style.display='none';populateStudents()}
 function editLesson(id){id=String(id);let l=data.lessons.find(x=>String(x.id)===id);if(!l)return;show('add');$('editId').value=l.id;$('formTitle').textContent='Редактировать вождение';$('date').value=l.date;$('student').value=l.studentId;$('start').value=l.start;$('end').value=l.end;$('type').value=l.type;$('vehicle').value=l.vehicle||'';$('place').value=l.place||'';$('reminder').value=l.reminder||0;$('notes').value=l.notes||''}
 function toggleDone(id){id=String(id);let l=data.lessons.find(x=>String(x.id)===id);if(l)l.done=!l.done;save();renderAll()}
