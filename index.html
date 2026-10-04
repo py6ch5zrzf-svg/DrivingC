@@ -100,6 +100,12 @@ $('scheduleCsv').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new Fil
     if(!end)end=addMinutesToTime(start,data.settings.defaultDuration||90);
     if(end<=start){skipped++;continue}
     let st=findStudentForImport(name);
+    if(st){
+      let incoming=name.trim().replace(/\s+/g,' ').split(' '),existing=String(st.name||'').trim().replace(/\s+/g,' ').split(' ');
+      if(incoming.length>=2&&existing.length>=2&&incoming[1].toLowerCase().replace(/ё/g,'е')===existing[1].toLowerCase().replace(/ё/g,'е')&&incoming[0]!==existing[0]){
+        st.name=[incoming[0],incoming[1],...existing.slice(2)].join(' ');
+      }
+    }
     if(!st){st={id:uid(),name:name.trim(),phone:'',status:'Обучается',plan:20,notes:'Добавлен при импорте расписания'};data.students.push(st);createdStudents++}
     let dup=data.lessons.some(l=>l.date===date&&l.start===start&&l.end===end&&String(l.studentId)===String(st.id));
     if(dup){skipped++;continue}
